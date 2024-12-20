@@ -61,7 +61,15 @@ app.use(
 
 // When you visit http://localhost:3000/
 app.get("/", (req, res, next) => {
-  res.send("<h1>Hello World (Sessions)</h1>");
+  if (req.session.viewCount) {
+    req.session.viewCount++;
+  } else {
+    req.session.viewCount = 1;
+  }
+
+  res.send(
+    `<h1>You have visited this page ${req.session.viewCount} times.</h1>`
+  );
 });
 
 /**
