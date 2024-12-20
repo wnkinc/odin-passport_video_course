@@ -1,0 +1,19 @@
+{
+  "name": "odin-passport_video_course",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/wnkinc/odin-passport_video_course.git"
+  },
+  "author": "wes",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wnkinc/odin-passport_video_course/issues"
+  },
+  "homepage": "https://github.com/wnkinc/odin-passport_video_course#readme",
+  "description": ""
+}
