@@ -8,7 +8,13 @@ const connection = require("../config/database");
  */
 
 // TODO
-router.post("/login", passport.authenticate("local"), (req, res, next) => {});
+router.post(
+  "/login",
+  passport.authenticate("local", {
+    failureRedirect: "/login-failure",
+    successRedirect: "login-success",
+  })
+);
 
 router.post("/register", async (req, res, next) => {
   try {
@@ -21,7 +27,7 @@ router.post("/register", async (req, res, next) => {
     const query = `
       INSERT INTO users (username, hash, salt)
       VALUES ($1, $2, $3)
-      RETURNING id, username;
+      RETURNING id, username, hash, salt;
     `;
     const values = [req.body.uname, hash, salt];
 
@@ -90,7 +96,11 @@ router.get("/protected-route", (req, res, next) => {
 
 // Visiting this route logs the user out
 router.get("/logout", (req, res, next) => {
-  req.logout();
+  req.logout(function (err) {
+    if (err) {
+      return next(err);
+    }
+  });
   res.redirect("/protected-route");
 });
 
