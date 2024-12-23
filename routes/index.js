@@ -1,6 +1,6 @@
 const router = require("express").Router();
 const passport = require("passport");
-const passwordUtils = require("../lib/passwordUtils");
+const genPassword = require("../lib/passwordUtils").genPassword;
 const connection = require("../config/database");
 
 /**
@@ -8,10 +8,36 @@ const connection = require("../config/database");
  */
 
 // TODO
-router.post("/login", (req, res, next) => {});
+router.post("/login", passport.authenticate("local"), (req, res, next) => {});
 
-// TODO
-router.post("/register", (req, res, next) => {});
+router.post("/register", async (req, res, next) => {
+  try {
+    // Generate the salt and hash for the password
+    const saltHash = genPassword(req.body.pw);
+    const salt = saltHash.salt;
+    const hash = saltHash.hash;
+
+    // Insert the new user into the database
+    const query = `
+      INSERT INTO users (username, hash, salt)
+      VALUES ($1, $2, $3)
+      RETURNING id, username;
+    `;
+    const values = [req.body.uname, hash, salt];
+
+    // Use connection.query to execute the query
+    const result = await connection.query(query, values);
+
+    // Log the returned user (contains id and username)
+    console.log(result.rows[0]);
+
+    // Redirect to the login page
+    res.redirect("/login");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error registering user.");
+  }
+});
 
 /**
  * -------------- GET ROUTES ----------------
@@ -25,8 +51,8 @@ router.get("/", (req, res, next) => {
 router.get("/login", (req, res, next) => {
   const form =
     '<h1>Login Page</h1><form method="POST" action="/login">\
-    Enter Username:<br><input type="text" name="username">\
-    <br>Enter Password:<br><input type="password" name="password">\
+    Enter Username:<br><input type="text" name="uname">\
+    <br>Enter Password:<br><input type="password" name="pw">\
     <br><br><input type="submit" value="Submit"></form>';
 
   res.send(form);
@@ -36,8 +62,8 @@ router.get("/login", (req, res, next) => {
 router.get("/register", (req, res, next) => {
   const form =
     '<h1>Register Page</h1><form method="post" action="register">\
-                    Enter Username:<br><input type="text" name="username">\
-                    <br>Enter Password:<br><input type="password" name="password">\
+                    Enter Username:<br><input type="text" name="uname">\
+                    <br>Enter Password:<br><input type="password" name="pw">\
                     <br><br><input type="submit" value="Submit"></form>';
 
   res.send(form);

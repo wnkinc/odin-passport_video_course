@@ -1,41 +1,59 @@
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const connection = require("./database");
+const validPassword = require("../lib/passwordUtils").validPassword;
 
-passport.use(
-  new LocalStrategy(function verify(username, password, cb) {
-    connection.get(
-      "SELECT * FROM users WHERE username = ?",
-      [username],
-      function (err, user) {
-        if (err) {
-          return cb(err);
-        }
-        if (!user) {
-          return cb(null, false, {
-            message: "Incorrect username or password.",
-          });
-        }
+const customFields = {
+  usernameField: "uname",
+  passwordField: "pw",
+};
 
-        crypto.pbkdf2(
-          password,
-          user.salt,
-          310000,
-          32,
-          "sha256",
-          function (err, hashedPassword) {
-            if (err) {
-              return cb(err);
-            }
-            if (!crypto.timingSafeEqual(user.hashed_password, hashedPassword)) {
-              return cb(null, false, {
-                message: "Incorrect username or password.",
-              });
-            }
-            return cb(null, user);
-          }
-        );
+const verifyCallback = (username, password, done) => {
+  connection.query(
+    "SELECT * FROM users WHERE username = $1",
+    [username],
+    (err, result) => {
+      if (err) {
+        return done(err);
       }
-    );
-  })
-);
+      if (result.rows.length === 0) {
+        return done(null, false);
+      }
+
+      const user = result.rows[0];
+
+      const isValid = validPassword(password, user.hash, user.salt);
+
+      if (isValid) {
+        return done(null, user);
+      } else {
+        return done(null, false);
+      }
+    }
+  );
+};
+const strategy = new LocalStrategy(customFields, verifyCallback);
+
+passport.use(strategy);
+
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser((userId, done) => {
+  connection.query(
+    "SELECT * FROM users WHERE id = $1",
+    [userId],
+    (err, result) => {
+      if (err) {
+        return done(err); // Handle database error
+      }
+      if (result.rows.length === 0) {
+        return done(null, false); // No user found
+      }
+
+      const user = result.rows[0];
+      done(null, user); // Return the user object
+    }
+  );
+});

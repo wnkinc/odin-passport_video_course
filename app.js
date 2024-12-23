@@ -51,7 +51,8 @@ app.use(
  */
 require("./config/passport");
 
-// TODO
+app.use(passport.initialize());
+app.use(passport.session());
 
 /**
  * -------------- ROUTES ----------------
