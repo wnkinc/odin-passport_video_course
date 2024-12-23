@@ -14,7 +14,8 @@ const connection = new Pool({
           id SERIAL PRIMARY KEY,
           username TEXT NOT NULL,
           hash TEXT NOT NULL,
-          salt TEXT NOT NULL
+          salt TEXT NOT NULL,
+          admin BOOLEAN NOT NULL DEFAULT false
         );
       `;
     await client.query(createTableQuery);
